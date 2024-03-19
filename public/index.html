@@ -23,6 +23,8 @@
                 <textarea type="text" id="message" class="form-control" placeholder="Ingrese su mensaje..."></textarea>
                 <br>
                 <button type="button" id="send" class="btn btn-primary">Enviar</button>
+                <button type="button" id="view-messages" class="btn btn-secondary">Ver Mensajes</button> <!-- Botón agregado -->
+                
                 <br><br>
             </fieldset>
         </form>
@@ -34,16 +36,36 @@
         const socket = io();
         socket.on('message', showMessage);
 
+        let areMessagesVisible = false;
+
         $(document).ready(function (){
-            $('#send').on('click', sendMessage);
-            getMessages();
+        $('#send').on('click', sendMessage);
+
+        $('#view-messages').on('click', function() {
+            // Alternar la visibilidad
+            if (areMessagesVisible) {
+                $('#messages').empty(); // Vaciar la tabla y ocultar los mensajes
+                areMessagesVisible = false;
+            } else {
+                getMessages(); // Cargar y mostrar los mensajes
+            }
         });
 
-        function getMessages(){
-            $.get('http://localhost:44301/api/messages', (messages) => {
-                messages.forEach(showMessage);
+        function getMessages() {
+            $.get('http://localhost:3002/api/messages', function(messages) {
+                let tableHtml = '<table class="table"><thead><tr><th>Nombre</th><th>Mensaje</th><th>Fecha</th></tr></thead><tbody>';
+                messages.forEach(function(message) {
+                    tableHtml += `<tr><td>${message.name}</td><td>${message.message}</td><td>${new Date(message.timestamp).toLocaleString()}</td></tr>`;
+                });
+                tableHtml += '</tbody></table>';
+                $('#messages').html(tableHtml);
+                areMessagesVisible = true; // Actualizar el estado para reflejar que los mensajes están visibles
+            }).fail(function(error) {
+                console.log("Error al obtener mensajes: ", error);
             });
         }
+    });
+
 
         function showMessage(message){
             $('#messages').append(`<h4>${message.name}</h4> <p>${message.message}</p>`);
@@ -54,7 +76,10 @@
                 name: $('#name').val(),
                 message: $('#message').val()
             };
-            $.post('http://localhost:44301/api/messages', message);
+            $.post('http://localhost:3002/api/messages', message, function(response) {
+                $('#message').val(''); // Limpia el campo de mensaje después de enviar
+                showMessage(response); // Muestra el mensaje enviado directamente sin necesidad de recargar
+            });
         }
     </script>
 </body>

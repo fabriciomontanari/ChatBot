@@ -16,6 +16,12 @@ class MessageRepository {
             { $group: { _id: '$name', count: { $sum: 1 } } }
         ]);
     }
+    
+    async getAllMessages() {
+        return await Message.find().sort({ timestamp: -1 }); // -1 para orden descendente
+    }
 }
+
+
 
 module.exports = new MessageRepository();
